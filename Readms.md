@@ -6,3 +6,5 @@ This is a video series on backend with javascript
 npm i mongoose express dotenv
 npm install cookie-parser
 npm install cors
+npm i mongoose-aggregate-paginate-v2
+npm i bcrypt jsonwebtoken
