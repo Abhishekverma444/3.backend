@@ -8,3 +8,5 @@ npm install cookie-parser
 npm install cors
 npm i mongoose-aggregate-paginate-v2
 npm i bcrypt jsonwebtoken
+npm i cloudinary
+npm i multer
