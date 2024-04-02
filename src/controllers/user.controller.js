@@ -11,7 +11,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
       const refreshToken = user.generateRefreshToken()
 
       user.refreshToken = refreshToken
-      await user.save({ validateBeforeSave: false })
+      await user.save({ validateBeforeSave: false }) // Save the user object without performing validation to optimize performance.
 
       return {accessToken, refreshToken}
 
@@ -99,19 +99,20 @@ const registerUser = asyncHandler(async(req, res) => {
 const loginUser = asyncHandler(async (req, res)=> {
    // req.body -> data
    // username or email 
-   // find the user
+   // find the user and error if not found
    // password check
    // access and refresh token
+   // remove (-password -refreshToken) from res->loggedInUser
    // send cookie
 
    const {email, username, password} = req.body;
 
-   if(!username || !email){
+   if( !(username || email) ){
       throw new ApiError(400, "username or email is required")
    }
 
-   const user = await User.findOne({ // username ya email jo bhi hai usi se find kar lo
-      $or: [ {username}, {email}]
+   const user = await User.findOne({ // .findOne() if not found then it return `null`
+      $or: [ {username}, {email}] // username ya email jo bhi hai usi se find kar lo
    })
 
    if(!user){
@@ -131,13 +132,15 @@ const loginUser = asyncHandler(async (req, res)=> {
    const  loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
    const options = { // ye karne par cookie sirf server se modify ki ja sakti hai 
-      httpOnly: true,
-      secure: true
+
+      httpOnly: true,  // Set 'httpOnly' to 'true' to prevent client-side access to the cookie, enhancing security by mitigating cross-site scripting (XSS) attacks.
+
+      secure: true,  //  Set 'secure' to 'true' to ensure the cookie is only transmitted over HTTPS connections, improving security by encrypting data during transmission and preventing interception.
    }
 
    return res
    .status(200)
-   .cookie("accessToken", accessToken, options)
+   .cookie("accessToken", accessToken, options) // cookie("name", "value", "options")
    .cookie("refreshToken", refreshToken, options)
    .json(
       new ApiResponse(
@@ -151,6 +154,7 @@ const loginUser = asyncHandler(async (req, res)=> {
 
 })
 
+
 const logoutUser = asyncHandler( async(req,res) => {
    User.findByIdAndUpdate(
       req.user._id,
@@ -162,7 +166,7 @@ const logoutUser = asyncHandler( async(req,res) => {
       {
          new: true
       }
-   )
+   )  // findByIdAndUpdate(id,{update},other)
 
    const options = {
       httpOnly: true,

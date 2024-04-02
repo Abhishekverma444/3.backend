@@ -1,11 +1,19 @@
-import { User } from "../models/user.model";
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/asyncHandler";
+import { User } from "../models/user.model.js";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken"
 
 
 export const verifyJWT = asyncHandler(async(req,_,next)=>{
+
+    // req-> token from client using both mobile and web scenario and if not found then throw error
+    // decodeToken using jwt's method and remove password and refreshToken field from this user instance
+    // find user using decoded token, if not find then throw error
+    // add user in `req` and call the next
+
+
     try {
+
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
     
         if( !token) {
@@ -23,6 +31,7 @@ export const verifyJWT = asyncHandler(async(req,_,next)=>{
         
         req.user = user;
         next()
+
     } catch (error) {
         throw new ApiError(401, error?.message || "Invalid accessToken")
     }

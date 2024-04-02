@@ -11,9 +11,9 @@ app.use(cors({
 }))
 
 app.use(express.json({limit: "20kb"}))
-app.use(express.urlencoded({extended: true, limit: "20kb"}))
-app.use(express.static("public"))
-app.use(cookieParser())
+app.use(express.urlencoded({extended: true, limit: "20kb"}))       // for hadling the URL data form client
+app.use(express.static("public"))              // for static assets accessing
+app.use(cookieParser())              // for retreving cookie and performing CRUD operation to it
 
 
 // routes import 

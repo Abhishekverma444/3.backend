@@ -51,17 +51,22 @@ const userSchema = new Schema(
     }
 )
 
-userSchema.pre("save", async function (next) {
+// bcrypt -> hashing password
+// agar password modified hai to rehash karo nhi to next ko call karo
+userSchema.pre("save", async function (next) { 
     if(!this.isModified("password")) return next();
 
    this.password = await bcrypt.hash(this.password, 10)
    next() 
 }) // don't use arrow function
 
+
+// This function is being added to the userSchema as a method using `methods` property in Mongoose
 userSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password)
+    return await bcrypt.compare(password, this.password) // ye function promise return karta hai (true, false) me
 }
 
+// JSON web Token
 userSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         {
