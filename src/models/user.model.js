@@ -52,7 +52,7 @@ const userSchema = new Schema(
 )
 
 // bcrypt -> hashing password
-// agar password modified hai to rehash karo nhi to next ko call karo
+// agar password modified hai to re-hash karo nhi to next ko call karo
 userSchema.pre("save", async function (next) { 
     if(!this.isModified("password")) return next();
 
