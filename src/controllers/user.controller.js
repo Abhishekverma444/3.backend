@@ -3,7 +3,7 @@ import {ApiError} from '../utils/ApiError.js'
 import {User} from '../models/user.model.js'
 import { uploadOnCloudinary } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
-import { jwt } from 'jsonwebtoken';
+import  jwt  from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -159,8 +159,11 @@ const logoutUser = asyncHandler( async(req,res) => {
    User.findByIdAndUpdate(
       req.user._id,
       {
-         $set: {
-            refreshToken: undefined
+         // $set: {
+         //    refreshToken: undefined
+         // }
+         $unset: {
+            refreshToken: 1 // this removes the field form document
          }
       },
       {
@@ -181,7 +184,7 @@ const logoutUser = asyncHandler( async(req,res) => {
 })
 
 const refreshAccessToken = asyncHandler(async(req,res)=>{
-   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+   const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken
 
    if (!incomingRefreshToken) {
       throw new ApiError(401, "unauthorized request")
