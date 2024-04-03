@@ -47,4 +47,4 @@ router.route("/cover-image").patch(verifyJWT, upload.single("coverImage"), updat
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile)
 router.route("/history").get(verifyJWT, getWatchHistory)
 
-export default router
+export default router; // jab default export karte hai to kis nam se chahe us nam se directly import bhi kar sakte hai 
