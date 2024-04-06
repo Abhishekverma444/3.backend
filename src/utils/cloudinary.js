@@ -9,12 +9,12 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const uploadOnCloudinary = async (localFilePath) => {
+const uploadOnCloudinary = async (localFilePath, type='image') => {
     try {
         if (!localFilePath) return null
         // upload the file on cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: 'auto'
+            resource_type: type
         })
         // file has been uploaded successfully
         // console.log("file is uploaded on cloudinary", response.url);
@@ -61,6 +61,8 @@ const deleteCloudinaryVideo = async (url) => {
     }
 }
 
+
+// This method is not ready to use
 const getVideoViews = async (public_id) => {
     try {
         const response = await axios.get(`https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/resources/video/${public_id}`, {
@@ -86,4 +88,4 @@ const getVideoViews = async (public_id) => {
 };
 
 
-export { uploadOnCloudinary, getVideoViews, deleteCloudinaryImage, deleteCloudinaryVideo }
+export { uploadOnCloudinary, deleteCloudinaryImage, deleteCloudinaryVideo }
