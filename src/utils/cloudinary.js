@@ -17,8 +17,8 @@ const uploadOnCloudinary = async (localFilePath, type='image') => {
             resource_type: type
         })
         // file has been uploaded successfully
-        // console.log("file is uploaded on cloudinary", response.url);
-        console.log("file is uploaded on cloudinary", response);
+        console.log("file is uploaded on cloudinary", response.url);
+        // console.log("file is uploaded on cloudinary", response);
         fs.unlinkSync(localFilePath) // jab cloudinary pe upload ho jaye, uske bad delete ho hamare server se
         return response
     } catch (error) {
@@ -36,7 +36,7 @@ const deleteCloudinaryImage = async (url) => {
 
         const response = await cloudinary.uploader.destroy(public_id)
         console.log("Image Deleted successfully");
-        return 
+        return true
     } catch (error) {
         console.log("Image is not deleted from cloudinary");
         return null
@@ -54,7 +54,7 @@ const deleteCloudinaryVideo = async (url) => {
             resource_type: 'video'
         })
         console.log("Video Deleted successfully");
-        return 
+        return true
     } catch (error) {
         console.log("Video is not deleted from cloudinary");
         return null

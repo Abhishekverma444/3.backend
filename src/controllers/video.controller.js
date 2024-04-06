@@ -4,7 +4,7 @@ import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import {deleteCloudinaryImage, uploadOnCloudinary} from "../utils/cloudinary.js"
+import {deleteCloudinaryImage, uploadOnCloudinary, deleteCloudinaryVideo} from "../utils/cloudinary.js"
 
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -71,7 +71,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     const video = await Video.findById(videoId);
 
     if(!video){
-        throw new ApiError(400, "Invalid videoId")
+        throw new ApiError(400, "Invalid videoId") 
     }
 
     return res.status(200).json(new ApiResponse(200, video, "video found successfully"));
@@ -88,7 +88,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     }
 
     const { title, description } = req.body;
-    if(title === ''){
+    if(title.trim() === ''){
         throw new ApiError(400, "Title is needed to update")
     }
     
@@ -103,7 +103,7 @@ const updateVideo = asyncHandler(async (req, res) => {
         videoId,
         {
             $set: {
-                thumbnail: newThumbnail || videoToUpdate.thumbnail,
+                thumbnail: newThumbnail.url || videoToUpdate.thumbnail,
                 title: title || videoToUpdate.title,
                 description: description || videoToUpdate.description, 
             }
@@ -120,11 +120,31 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: delete video
-    Video.deleteOne({ _id: videoId }, (err) => {
-        if (err) {
-          throw new ApiError(400, "Something went wrong, to delete video")
+    const video = await Video.findById(videoId);
+
+    if(!video){
+        throw new ApiError(400, "Invalid videoId");
+    }
+
+    let thumbnailToDelete;
+    if(video.thumbnail !== ""){
+        thumbnailToDelete =  await deleteCloudinaryImage(video.thumbnail);
+        if(!thumbnailToDelete){
+            throw new ApiError(400, "thumbnail not deleted");
         }
-      });
+    }
+
+    const videoToDelete = await deleteCloudinaryVideo(video.videoFile);
+    if(!videoToDelete){
+        throw new ApiError(400, "Video file is not deleted");
+    }
+
+    const videoDeleted = await Video.deleteOne({ _id: videoId })
+
+    if (videoDeleted.deletedCount === 0) {
+      throw new ApiError(404, "Something went wrong, to delete video")
+    }
+
     return res.status(200).json(new ApiResponse(200, "Video deleted successfully"));
 })
 
@@ -137,11 +157,13 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid videoId, Can't check PublishStatus")
     }
 
-    const PublishStatus = await Video.updateOne(
-        videoId,
+    const newStatus = !video.isPublished
+
+    const PublishStatus = await Video.findByIdAndUpdate(
+         videoId,
         {
             $set:{
-                isPublished: !video.isPublished
+                isPublished: newStatus
             }
         },
         {
@@ -151,7 +173,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     if(! PublishStatus){ 
         throw new ApiError(400, "PublishStatus not changed , try again")
     }
-    return res.status(200).json( new ApiResponse(200, "PublishStatus changed successfully"))
+    return res.status(200).json( new ApiResponse(200, newStatus, "PublishStatus changed successfully"))
     
 })
 
