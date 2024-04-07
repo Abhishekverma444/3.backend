@@ -7,13 +7,17 @@ import {
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 
 const router = Router();
-router.use(verifyJWT);
+router.use(verifyJWT); 
+
 
 router
     .route("/c/:channelId")
-    .get(getSubscribedChannels)
-    .post(toggleSubscription);
+    .get(getUserChannelSubscribers) // Endpoint to get subscribers for a channel
+    .post(toggleSubscription);      // Endpoint to toggle subscription for a channel
 
-router.route("/u/:subscriberId").get(getUserChannelSubscribers)
+router
+    .route("/u/:subscriberId")
+    .get(getSubscribedChannels);    // Endpoint to get channels subscribed by a user
+
 
 export default router;
