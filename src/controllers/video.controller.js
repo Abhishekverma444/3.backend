@@ -25,15 +25,15 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
     let thumbnailLocalPath;
     if(req.files && Array.isArray(req.files.thumbnail) && req.files.thumbnail.length > 0) {
-        thumbnailLocalPath = req.files.thumbnail[0].path
+        thumbnailLocalPath = req.files?.thumbnail[0].path
     }
 
     const video = await uploadOnCloudinary(videoLocalPath, 'video');
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
 
-    // console.log(video.url)
-    // console.log(thumbnail.url)
-    // console.log(video.duration)
+    console.log(video.url)
+    console.log(thumbnail.url)
+    console.log(video.duration)
 
     if(!video){
         throw new ApiError(400, "Video file is required")
@@ -45,7 +45,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
         title,
         description,
         duration: video?.duration,
-    })
+        owner: req.user?._id,
+    }) 
 
     if( !createdVideo ){
         throw new ApiError(400, "Something went wrong to publish video");
@@ -87,6 +88,10 @@ const updateVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "videoId is Invalid");
     }
 
+    if(videoToUpdate.owner.toString() !== req.user?._id.toString() ){ // convert both to string because both are the instance of _id
+        throw new ApiError(400, "Can't update this video, Owner is not same");
+    }
+
     const { title, description } = req.body;
     if(title.trim() === ''){
         throw new ApiError(400, "Title is needed to update")
@@ -126,6 +131,10 @@ const deleteVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid videoId");
     }
 
+    if(video.owner.toString() !== req.user?._id.toString() ){
+        throw new ApiError(400, "Can't delete this video, Owener is Invalid");
+    }
+
     let thumbnailToDelete;
     if(video.thumbnail !== ""){
         thumbnailToDelete =  await deleteCloudinaryImage(video.thumbnail);
@@ -155,6 +164,10 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
     if(!video){ 
         throw new ApiError(400, "Invalid videoId, Can't check PublishStatus")
+    }
+
+    if(video.owner.toString() !== req.user?._id.toString()){
+        throw new ApiError(400, "Can't perform this action, video owner is not same");
     }
 
     const newStatus = !video.isPublished
