@@ -73,7 +73,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Failed to get the videos Or no video uploaded by this user.");
         }
         return res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully."));
-    }
+    }x
 
 
     let matchStage = {};
