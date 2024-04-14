@@ -59,71 +59,22 @@ const publishAVideo = asyncHandler(async (req, res) => {
     )
 })
 
-
-
-
-// const getAllVideos = asyncHandler(async (req, res) => {
-//     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-
-//     let matchStage = {}; // Define an empty match stage
-
-//     // If a search query is provided, construct the regex pattern
-//     if (query) {
-//         const searchWords = query.split(" "); // Split the search string into individual words
-//         const regexPattern = searchWords.map(word => `(?=.*${word})`).join(''); // Construct the regex pattern
-
-//         // Add the regex pattern to the match stage
-//         matchStage.title = { $regex: regexPattern, $options: 'i' };
-//     }
-
-//     // Sort based on the specified field and sort type
-//     let sortStage = {};
-//     if (sortBy) {
-//         if (sortBy === 'upload_date') {
-//             sortStage['upload_date'] = sortType === 'desc' ? -1 : 1;
-//         } else if (sortBy === 'view_count') {
-//             sortStage['view_count'] = sortType === 'desc' ? -1 : 1;
-//         }
-//     }
-
-//     // Additional sorting based on sortType
-//     if (sortType && sortType !== 'all') {
-//         if (sortType === 'video') {
-//             matchStage.type = 'video';
-//         } else if (sortType === 'channel') {
-//             matchStage.type = 'channel';
-//         } else if (sortType === 'playlist') {
-//             matchStage.type = 'playlist';
-//         }
-//     }
-
-//     // Pagination: Calculate the number of documents to skip
-//     const skip = (page - 1) * limit;
-
-//     // Aggregate pipeline stages
-//     const pipeline = [
-//         { $match: matchStage }, // Match stage based on search criteria
-//         { $sort: sortStage }, // Sort stage based on specified field and sort type
-//         { $skip: skip }, // Pagination: Skip documents
-//         { $limit: parseInt(limit) } // Pagination: Limit documents
-//     ];
-
-//     // Execute the aggregation pipeline
-//     let videos = await Video.aggregate(pipeline);
-
-//     if (videos.length === 0) {
-//         throw new ApiError(400, "Video not found.");
-//     }
-
-//     return res.status(200).json(new ApiResponse(200, videos, "Videos found successfully."));
-// });
-
-
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
     // sortBy: upload_date, view count, duration
     // sortType: all, video, channel, playlist
+
+    if(userId){
+        const videos = await Video.aggregate([
+            { $match:{ owner: new mongoose.Types.ObjectId(userId)} }
+        ])
+        if(!videos){
+            throw new ApiError(400, "Failed to get the videos Or no video uploaded by this user.");
+        }
+        return res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully."));
+    }
+
 
     let matchStage = {};
     let searchWords;
