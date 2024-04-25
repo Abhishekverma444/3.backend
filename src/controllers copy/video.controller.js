@@ -73,47 +73,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Failed to get the videos Or no video uploaded by this user.");
         }
         return res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully."));
-    }
-
-    if(!query){
-        const videos = await Video.aggregate([
-            { $match: {} },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "owner",
-                    foreignField: "_id",
-                    as: "owner_details"
-                }
-            },
-            {
-                $addFields: {
-                    owner_details: {
-                        $first: "$owner_details",
-                    }
-                }
-            },
-            {
-                $project:{
-                    thumbnail:1,
-                    title:1,
-                    views:1,
-                    createdAt: 1,
-                    channelImage : "$owner_details.avatar",
-                    channelName : "$owner_details.fullname",
-                    description: 1,
-                    isPublished: true,
-                    updatedAt:1,
-                    videoFile:1,
-                    duration:1,
-                }
-            }
-          ]);
-        if(!videos){
-            throw new ApiError(400, "Failed to get the videos Or no video uploaded by this user.");
-        }
-        return res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully."));
-    }
+    } 
 
 
     let matchStage = {};
@@ -156,37 +116,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
             },
             {
                 $sort: sortStage,
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "owner",
-                    foreignField: "_id",
-                    as: "owner_details"
-                }
-            },
-            {
-                $addFields: {
-                    owner_details: {
-                        $first: "$owner_details",
-                    }
-                }
-            },
-            {
-                $project:{
-                    thumbnail:1,
-                    title:1,
-                    views:1,
-                    createdAt: 1,
-                    channelImage : "$owner_details.avatar",
-                    channelName : "$owner_details.fullname",
-                    description: 1,
-                    isPublished: true,
-                    updatedAt:1,
-                    videoFile:1,
-                    duration:1,
-                    owner: 1,
-                }
             },
             { $skip: (page - 1) * limit }, // Pagination: Skip documents
             { $limit: parseInt(limit) } // Pagination: Limit documents
@@ -364,7 +293,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, "Video deleted successfully"));
 })
-
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
