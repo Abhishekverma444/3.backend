@@ -60,103 +60,63 @@ const publishAVideo = asyncHandler(async (req, res) => {
 })
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
-    // sortBy: upload_date, view count, duration
-    // sortType: all, video, channel, playlist
-
-    if(userId){
-        const videos = await Video.aggregate([
-            { $match:{ owner: new mongoose.Types.ObjectId(userId)} }
-        ])
-        if(!videos){
-            throw new ApiError(400, "Failed to get the videos Or no video uploaded by this user.");
-        }
-        return res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully."));
-    }
-
-    if(!query){
-        const videos = await Video.aggregate([
-            { $match: {} },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "owner",
-                    foreignField: "_id",
-                    as: "owner_details"
-                }
-            },
-            {
-                $addFields: {
-                    owner_details: {
-                        $first: "$owner_details",
-                    }
-                }
-            },
-            {
-                $project:{
-                    thumbnail:1,
-                    title:1,
-                    views:1,
-                    createdAt: 1,
-                    channelImage : "$owner_details.avatar",
-                    channelName : "$owner_details.fullname",
-                    description: 1,
-                    isPublished: true,
-                    updatedAt:1,
-                    videoFile:1,
-                    duration:1,
-                }
-            }
-          ]);
-        if(!videos){
-            throw new ApiError(400, "Failed to get the videos Or no video uploaded by this user.");
-        }
-        return res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully."));
-    }
-
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
     let matchStage = {};
-    let searchWords;
-    let regexPattern;
-    if (typeof query === "string") {
-        searchWords = query.split(" "); // Split the search string into individual words
-        regexPattern = searchWords.map(word => `(?=.*${word})`).join('');// Construct the regular expression pattern to match any of the words
+    let sortStage = {};
+ 
+
+    // Handle filtering based on userId
+    if (userId) {
+        const videos = await Video.aggregate([
+            { $match: { owner: mongoose.Types.ObjectId(userId) } },
+            { $skip: (page - 1) * parseInt(limit) }, // Pagination: Skip documents
+            { $limit: parseInt(limit) } // Pagination: Limit documents
+        ]);
+        if (!videos || videos.length === 0) {
+            throw new ApiError(400, "No videos found for this user.");
+        }
+        return res.status(200).json(new ApiResponse(200, videos, "Videos fetched successfully."));
+    }
+
+    // Handle general video search with optional query
+    if (!query || query.trim() === '') {
+        matchStage = {}; // Match all videos
+    } else {
+        const searchWords = query.split(" ");
+        const regexPattern = searchWords.map(word => `(?=.*${word})`).join('');
         matchStage.title = { $regex: regexPattern, $options: 'i' };
     }
 
-    const sortStage = {};
+    // Handle sorting based on sortBy
     if (sortBy) {
         if (sortBy === "ascDate") {
             sortStage.createdAt = 1;
-        }
-        else if (sortBy === "ascViews") {
+        } else if (sortBy === "ascViews") {
             sortStage.views = 1;
-        }
-        else if (sortBy === 'descViews') {
+        } else if (sortBy === 'descViews') {
             sortStage.views = -1;
-        }
-        else if (sortBy === 'ascDur') {
+        } else if (sortBy === 'ascDur') {
             sortStage.duration = 1;
-        }
-        else if (sortBy === 'descDur') {
+        } else if (sortBy === 'descDur') {
             sortStage.duration = -1;
+        } else {
+            sortStage.createdAt = -1; // Default sorting by creation date descending
         }
-        else {
-            sortStage.createdAt = -1;
-        }
+    } else {
+        sortStage.createdAt = -1; // Default sorting by creation date descending
     }
 
+  
 
-    let resResult;
+
+    let result = [];
+
+    // Handle video results based on sortType
     if (sortType === "all" || sortType === "video") {
-        resResult = await Video.aggregate([
-            {
-                $match: matchStage,
-            },
-            {
-                $sort: sortStage,
-            },
+        const videos = await Video.aggregate([
+            { $match: matchStage },
+            { $sort: sortStage },
             {
                 $lookup: {
                     from: "users",
@@ -167,113 +127,98 @@ const getAllVideos = asyncHandler(async (req, res) => {
             },
             {
                 $addFields: {
-                    owner_details: {
-                        $first: "$owner_details",
+                    owner_details: { $arrayElemAt: ["$owner_details", 0] }
+                }
+            },
+            {
+                $project: {
+                    thumbnail: 1,
+                    title: 1,
+                    views: 1,
+                    createdAt: 1,
+                    channelImage: "$owner_details.avatar",
+                    channelName: "$owner_details.fullname",
+                    description: 1,
+                    isPublished: true,
+                    updatedAt: 1,
+                    videoFile: 1,
+                    duration: 1
+                }
+            },
+            { $skip: (page - 1) * parseInt(limit) }, // Pagination: Skip documents
+            { $limit: parseInt(limit) } // Pagination: Limit documents
+        ]);
+
+        if(sortType === 'video'){
+            result.push({'videos': videos})
+            return res.status(200).json(new ApiResponse(200, result, "Videos fetched successfully."));
+        }
+        result.push({'videos': videos})
+    }
+
+
+    const playlistMatchExpression = Object.keys(matchStage).length > 0 ? { name: { $regex: matchStage.title.$regex, $options: 'i' } } : matchStage;
+    if (sortType === "playlist" || sortType === "all") {
+        const playlists = await Playlist.aggregate([
+            { $match: playlistMatchExpression },
+            { $sort: { createdAt: -1 } },
+            { $skip: (parseInt(page) - 1) * parseInt(limit) },
+            { $limit: parseInt(limit) }
+        ]);
+
+        if(sortType === 'playlist'){
+            result.push({'playlists': playlists})
+            return res.status(200).json(new ApiResponse(200, result, "Playlists fetched successfully."));
+        }
+        result.push({'playlists': playlists})
+    }
+
+    const channelMatchExpression = Object.keys(matchStage).length > 0 ? { username: { $regex: matchStage.title.$regex, $options: 'i' } } : matchStage;
+    if (sortType === "channel" || sortType === "all") {
+        const channels = await User.aggregate([
+            { $match: channelMatchExpression },
+            {
+                $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "channel",
+                    as: "subscribers"
+                }
+            },
+            {
+                $addFields: {
+                    subscribersCount: { $size: "$subscribers" },
+                    isSubscribed: {
+                        $cond: {
+                            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                            then: true,
+                            else: false
+                        }
                     }
                 }
             },
             {
-                $project:{
-                    thumbnail:1,
-                    title:1,
-                    views:1,
-                    createdAt: 1,
-                    channelImage : "$owner_details.avatar",
-                    channelName : "$owner_details.fullname",
-                    description: 1,
-                    isPublished: true,
-                    updatedAt:1,
-                    videoFile:1,
-                    duration:1,
-                    owner: 1,
+                $project: {
+                    fullname: 1,
+                    username: 1,
+                    subscribersCount: 1,
+                    isSubscribed: 1,
+                    avatar: 1
                 }
             },
-            { $skip: (page - 1) * limit }, // Pagination: Skip documents
-            { $limit: parseInt(limit) } // Pagination: Limit documents
-        ])
+            { $skip: (parseInt(page) - 1) * parseInt(limit) },
+            { $limit: parseInt(limit) }
+        ]);
 
-        if (sortType === "video") {
-            return res.status(200).json(new ApiResponse(200, resResult, "Videos found successfully."));
+        if(sortType === 'channel'){
+            result.push({'channels': channels});
+            return res.status(200).json(new ApiResponse(200, result, "Channels fetched successfully."));
         }
+        result.push({'channels': channels});
     }
 
-    if(sortType === "playlist" || sortType === "all"){
-        const playlists = await Playlist.aggregate([
-            {
-                $match: {
-                    name: { $regex: regexPattern, $options: 'i' },
-                },
-            },
-            {
-                $sort: {
-                    createdAt: -1,
-                },
-            },
-            { $skip: (page - 1) * limit }, // Pagination: Skip documents
-            { $limit: parseInt(limit) } // Pagination: Limit documents
-        ])
-        if(sortType === "playlist"){
-            resResult = playlists;
-        } else {
-            resResult.push({playlists: playlists})
-        }
-    }
-
-    if(sortType === "channel" || sortType === "all"){
-        const channels = await User.aggregate([
-            {
-               $match: {
-                  username: { $regex: regexPattern, $options: 'i' }
-               }
-            },
-            {
-               $lookup: {
-                  from: "subscriptions",
-                  localField: "_id",
-                  foreignField: "channel",
-                  as: "subscribers"
-               }
-            },
-            {
-               $addFields: {
-                  subscribersCount: {
-                     $size: "$subscribers"
-                  },
-                  isSubscribed: {
-                     $cond: {
-                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
-                        then: true,
-                        else: false
-                     }
-                  }
-               }
-            },
-            {
-               $project: {
-                  fullname: 1,
-                  username: 1,
-                  subscribersCount: 1,
-                  isSubscribed: 1,
-                  avatar: 1,
-               }
-            },
-            { $skip: (page - 1) * limit }, // Pagination: Skip documents
-            { $limit: parseInt(limit) } // Pagination: Limit documents
-         ])
-        if(sortType === "channels"){
-            resResult = channels;
-        } else {
-            resResult.push({channels: channels})
-        }
-    }
-
-
-    if (resResult.length === 0) {
-        throw new ApiError(400, "Video not found.");
-    }
-
-    return res.status(200).json(new ApiResponse(200, resResult, "Videos found successfully."));
-})
+    return res.status(200).json(new ApiResponse(200, result, "All Data fetched successfully."));
+});
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
