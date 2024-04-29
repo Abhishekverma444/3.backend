@@ -142,7 +142,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     isPublished: true,
                     updatedAt: 1,
                     videoFile: 1,
-                    duration: 1
+                    duration: 1,
+                    owner: 1
                 }
             },
             { $skip: (page - 1) * parseInt(limit) }, // Pagination: Skip documents
