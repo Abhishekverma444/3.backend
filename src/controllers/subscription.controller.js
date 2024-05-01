@@ -39,7 +39,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     // controller to return subscriber list of a channel
     const { channelId } = req.params
 
-    console.log(channelId)
+    // console.log(channelId)
 
     if (!isValidObjectId(channelId)) {
         throw new ApiError(400, "Invalid channelId");
@@ -72,11 +72,12 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
                 email: "$subscriber_details.email",
                 username: "$subscriber_details.username",
                 avatar: "$subscriber_details.avatar",
+                userId: "$subscriber_details._id"
             }
         }
     ])
 
-    console.log(subscribers)
+    // console.log(subscribers)
 
     if (!subscribers?.length) {
         return res.status(200).json(new ApiResponse(200, "", "you have no subscriber"))
@@ -130,7 +131,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         }
     ])
 
-    console.log(channels)
+    // console.log(channels)
 
     if (!channels?.length) {
         return res.status(200).json(new ApiResponse(200, "", "you have not subscribed any channel yet"))

@@ -35,7 +35,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
    const { fullname, email, username, password } = req.body
    // console.log('email: ', email);
-   console.log("req.body", req.body);
+   // console.log("req.body", req.body);
 
 
    if (
@@ -53,7 +53,7 @@ const registerUser = asyncHandler(async (req, res) => {
       throw new ApiError(409, "User with email or username already exists")
    }
 
-   console.log("req.files :- ", req.files);
+   // console.log("req.files :- ", req.files);
 
    const avatarLocalPath = req.files?.avatar[0]?.path
    //    const coverImageLocalPath = req.files?.coverImage[0]?.path;
@@ -404,7 +404,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
       }
    ])
 
-   console.log(channel);
+   // console.log(channel);
 
    if (!channel?.length) {
       throw new ApiError(404, "channel does not exists")

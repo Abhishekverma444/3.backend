@@ -60,7 +60,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     }
 
 
-    console.log(userTweets)
+    // console.log(userTweets)
 
     return res.status(200).json(new ApiResponse(200, userTweets, "User's tweet fetched successfully"))
 })
@@ -104,7 +104,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
     const { tweetId } = req.params;
 
     const deleteTweet = await Tweet.findByIdAndDelete(tweetId);
-    console.log(deleteTweet)
+    // console.log(deleteTweet)
     if(!deleteTweet){
         throw new ApiError(404, "Tweet is not found to delete");
     }

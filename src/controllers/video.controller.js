@@ -20,7 +20,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     }
 
     const videoLocalPath = req.files?.videoFile[0]?.path;
-    console.log(videoLocalPath);
+    // console.log(videoLocalPath);
     if (!videoLocalPath) {
         throw new ApiError(400, "Video is required")
     }
@@ -33,9 +33,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const video = await uploadOnCloudinary(videoLocalPath, 'video');
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
 
-    console.log(video.url)
-    console.log(thumbnail.url)
-    console.log(video.duration)
+    // console.log(video.url)
+    // console.log(thumbnail.url)
+    // console.log(video.duration)
 
     if (!video) {
         throw new ApiError(400, "Video file is required")
