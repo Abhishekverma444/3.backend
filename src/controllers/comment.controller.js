@@ -35,17 +35,37 @@ const getVideoComments = asyncHandler(async (req, res) => {
         {
             $project: {
                 username: "$owner.username",
+                fullname: "$owner.fullname",
                 avatar: "$owner.avatar",
                 content: 1,
+                createdAt: 1,
             }
         },
         { $skip: (page - 1) * limit }, // Pagination: Skip documents
         { $limit: parseInt(limit) } // Pagination: Limit documents
     ];
 
+    const result = []
     const comments = await Comment.aggregate(pipeline);
+    result.push({'comments': comments});
 
-    return res.status(200).json(new ApiResponse(200, comments, "Video comments retrieved successfully."));
+    const totalComments = await Comment.aggregate([
+        {
+            $match: {
+                video: new mongoose.Types.ObjectId(videoId)
+            }
+        },
+        {
+            $group: {
+                _id: null, // Group all documents into a single group
+                totalComments: { $sum: 1 } // Count the number of documents in the group
+            }
+        }
+
+    ])
+    result.push({"NumOfComments": totalComments})
+
+    return res.status(200).json(new ApiResponse(200, result, "Video comments retrieved successfully."));
 });
 
 const addComment = asyncHandler(async (req, res) => {

@@ -47,10 +47,12 @@ const getUserTweets = asyncHandler(async (req, res) => {
         },
         {
           $project: {
-            username: 1,
+            fullname: 1,
+            createdAt: 1,
             tweet: "$userTweets.content",
             email: 1,
             avatar: 1,
+            _id: "$userTweets._id"
           },
         },
       ])

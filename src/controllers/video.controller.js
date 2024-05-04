@@ -138,6 +138,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     createdAt: 1,
                     channelImage: "$owner_details.avatar",
                     channelName: "$owner_details.fullname",
+                    channelUserName: "$owner_details.username",
                     description: 1,
                     isPublished: true,
                     updatedAt: 1,
@@ -223,13 +224,51 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
-    const video = await Video.findById(videoId);
+    const video = await Video.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(videoId)
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner_details"
+            }
+        },
+        {
+            $addFields: {
+                owner_details: { $arrayElemAt: ["$owner_details", 0] }
+            }
+        },
+        {
+            $project: {
+                thumbnail: 1,
+                title: 1,
+                views: 1,
+                createdAt: 1,
+                channelImage: "$owner_details.avatar",
+                channelName: "$owner_details.fullname",
+                channelUserName: "$owner_details.username",
+                description: 1,
+                isPublished: true,
+                updatedAt: 1,
+                videoFile: 1,
+                duration: 1,
+                owner: 1
+            }
+        },
+    ]);
+
+    
 
     if (!video) {
         throw new ApiError(400, "Invalid videoId")
     }
 
-    return res.status(200).json(new ApiResponse(200, video, "video found successfully"));
+    return res.status(200).json(new ApiResponse(200, video[0], "video found successfully"));
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
