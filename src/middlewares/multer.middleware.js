@@ -1,7 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 
-const uploadDir = path.join(__dirname, 'public', 'temp');
+const uploadDir = path.join('3.backend', 'public', 'temp');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
