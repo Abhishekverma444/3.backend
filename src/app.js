@@ -57,16 +57,21 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Define the upload directory relative to the backend directory
+// Define the upload directory relative to the project root directory
 const uploadDir = path.join(__dirname, '../public/temp');
 
-// Ensure the upload directory exists
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-    console.log('Upload directory created:', uploadDir);
-} else {
-    console.log('Upload directory already exists:', uploadDir);
-}
+// Function to ensure the upload directory exists
+const ensureUploadDirExists = () => {
+    if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+        console.log('Upload directory created:', uploadDir);
+    } else {
+        console.log('Upload directory already exists:', uploadDir);
+    }
+};
+
+// Ensure the upload directory exists at startup
+ensureUploadDirExists();
 
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
@@ -78,6 +83,17 @@ app.use(express.json({ limit: "20kb" }));
 app.use(express.urlencoded({ extended: true, limit: "20kb" }));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(cookieParser());
+
+// Middleware to ensure the directory exists before handling file uploads
+app.use((req, res, next) => {
+    try {
+        ensureUploadDirExists();
+        next();
+    } catch (err) {
+        console.error('Error ensuring upload directory exists:', err);
+        res.status(500).send('Server error: cannot ensure upload directory');
+    }
+});
 
 // routes import 
 import userRouter from './routes/user.routes.js';
