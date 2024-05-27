@@ -224,6 +224,15 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+
+    // this is a extra functionality to increase the number of views
+    await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $inc: { views: 1 } // this line is to increase views by 1.
+        }
+    )
+
     const video = await Video.aggregate([
         {
             $match: {
