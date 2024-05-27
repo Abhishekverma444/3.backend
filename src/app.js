@@ -44,13 +44,16 @@
 
 // export { app }
 
-
-
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES module alternative to __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -61,13 +64,15 @@ const uploadDir = path.join(__dirname, '../public/temp');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
     console.log('Upload directory created:', uploadDir);
+} else {
+    console.log('Upload directory already exists:', uploadDir);
 }
 
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     credentials: true,
-}))
+}));
 
 app.use(express.json({ limit: "20kb" }));
 app.use(express.urlencoded({ extended: true, limit: "20kb" }));
@@ -95,6 +100,11 @@ app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/playlist", playlistRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+
+// Example route to ensure the server is running
+app.get('/', (req, res) => {
+    res.send('Server is running!');
+});
 
 // http://localhost:8000/api/v1/users/register
 
